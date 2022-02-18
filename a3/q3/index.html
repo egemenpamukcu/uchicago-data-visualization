@@ -19,7 +19,18 @@
             margin-left: 30px;
             margin-bottom: 0;
         }
-
+        .subhead {
+            margin-left: 30px;
+            margin-bottom: 0;
+            max-width: 800px;
+        }
+        
+        .source {
+            max-width: 800px;
+            text-align: right;
+            font-size: 12px;
+            margin-top: 30px;
+        }
         .x .tick line {
             stroke: rgba(0, 0, 0, .2);
         }
@@ -46,23 +57,33 @@
             font-size: 14px;
             fill: #333;
         }
+
+        .pop-up {
+            position: absolute; 
+            background-color: red;
+            line-height: 1.2;
+            width: 70px;
+            pointer-events: none;
+            background-color: white;
+            padding: 10px;
+            opacity: 0;
+        }
     </style>
 </head>
 
 <body>
     <div class="chart-container">
         <h1 class="headline">
-            Playoff Wins
+            Sole Leader in Playoff Wins
         </h1>
-
-        <svg width="1050px" height="1000px">
-
-        </svg>
+        <p class="subhead">No other quarterback has even played in 35 postseason games, let alone won that many. Brady has 19 more wins than the quarterback with the second-most playoff victories.</p>
+        <svg width="1050px" height="500px"></svg>
+        <p class="source">Source: The New York Times</p>
+        <div class="pop-up"><div>
     </div>
 </body>
 
 <script src="https://d3js.org/d3.v6.min.js"></script>
-<!-- we're using d3 version 6 (the latest version) for all out work -->
 
 <script>
 
@@ -86,21 +107,15 @@
             .domain(d3.extent(data.map(function (d) { return d.year })))
             .range([margin.left, width - margin.right])
 
-        //in this case we need to use scaleLinear because we're dealin linear data
         let y = d3.scaleLinear()
             .domain(d3.extent(data.map(function (d) { return d.playoff_wins })))
             .range([height - margin.bottom, margin.top])
 
-
-        //define the settings for our axes
-        //https://github.com/d3/d3-axis
-        // https://github.com/d3/d3-time-format
-        //https://github.com/d3/d3-format
-        let yAxisSettings = d3.axisRight(y) //set axis to the left
-            .ticks(5) //approx how many ticks, the function will not necesarily give you that number
-            .tickSize(width-40) //size of tick lines
-            .tickFormat(d3.format(".0f")) //what format do you want https://github.com/d3/d3-format 
-            .tickPadding(15) //distance from tick labels to tick marks
+        let yAxisSettings = d3.axisRight(y)
+            .ticks(5) 
+            .tickSize(width-40)
+            .tickFormat(d3.format(".0f")) 
+            .tickPadding(15) 
             
 
         let xAxisSettings = d3.axisBottom(x)
@@ -109,9 +124,8 @@
             .tickPadding(10)
             .tickFormat(d3.format(".0f"))
 
-        //adding to the axes to our chart
         let xAxisTicks = svg.append("g")
-            .attr("class", "x axis") //give each axis a class
+            .attr("class", "x axis")
             .call(xAxisSettings)
             .attr("transform", `translate(0,${height - margin.bottom})`)
 
@@ -120,10 +134,9 @@
             .call(yAxisSettings)
             .attr("transform", `translate(${margin.left},0)`)
 
-        let line = d3.line() //define a line function
-            // .defined(d => !isNaN(d.indexed_ave))
-            .x(function (d) { return x(d.year) }) //accessing date 
-            .y(function (d) { return y(d.playoff_wins) }) //accessing value 
+        let line = d3.line()
+            .x(function (d) { return x(d.year) }) 
+            .y(function (d) { return y(d.playoff_wins) })
 
 
         
@@ -136,7 +149,7 @@
         .data(grouped_data)
         .join("path")
         .attr("class", function(d) {
-            return "line " +  d[0]
+            return "line l-" +  d[0]
         })
         .attr("d", function(d) {
             return line(d[1])
@@ -166,14 +179,16 @@
 
         svg.selectAll(".circle")
             .data(grouped_data)
-            .join("circle") // enter append
-            .attr("class", "circle")
+            .join("circle")
+            .attr("class", function(d) {
+            return "circle c-" +  d[0]
+        })            
             .attr("r", function (d) { if (d[0] == 'BradTo00') {
                 return "7"
             } if (d[1][d[1].length - 1].playoff_wins > 0) {
                 return "2"
             } }) // radius
-            .attr("cx", d=> x(d[1][d[1].length - 1].year))   // center x passing through your xScal
+            .attr("cx", d=> x(d[1][d[1].length - 1].year))
             .attr("cy", d=> y(d[1][d[1].length - 1].playoff_wins))
             .style("fill", d => {
             if(d[1][d[1].length - 1].year >= 2019) {
@@ -215,10 +230,75 @@
             .style("fill", "Black")
             .style("font-size", "30")
 
-            // .text(d => lookup[d[0]].last_name)
+
+
+        let popup = d3.select(".pop-up");
+
+
+        line_path.on("mouseover", (event, d) => {
+
+            svg.select(".l-" + d[0])
+                .style("stroke", "orange")
+                .style("stroke-width", 4)
+                .raise()
+            svg.select(".c-" + d[0])
+                .style("fill", "orange")
+
+            
+            let lang = `${lookup[d[0]].player_name}, ${d[1][d[1].length - 1].playoff_wins}`
+
+            popup
+                .style("opacity", 1)
+                .style("left", (event.x) + "px")
+                .style("top", (event.y - 50) + "px")
+                .html(lang)
+                .style("background-color", "rgba(0,0,0,0.2)")
+                .style("font-size", "12px")
+                .style("width", "100px")
+                .style("text-align", "center")
+                .style("color", "white")
+
+        })
+
+        line_path.on("mouseout", (event, d) => {
+            // console.log(event)
+            line_path
+                .style("fill", "none")
+                .style("stroke", d => {
+                    if(d[1][d[1].length - 1].year >= 2019) {
+                        return "#18D9ED"
+                    } else if (['Starr', 'Bradshaw', 'Montana', 'Elway', 'Tarkenton'].includes(lookup[d[0]]['last_name'])) {
+                        return "black"
+                    }
+                    else {
+                        return "#D3D3D3"
+                    }
+                })
+                .style("stroke-width", d => {
+                    if(d[0] == "BradTo00") {
+                        return "4px"
+                    } else {
+                        return "1px"
+                    }
+                })
+
+            svg.selectAll(".circle")            
+                .style("fill", d => {
+                    if(d[1][d[1].length - 1].year >= 2019) {
+                        return "#18D9ED"
+                    } else if (['Starr', 'Bradshaw', 'Montana', 'Elway', 'Tarkenton'].includes(lookup[d[0]]['last_name'])) {
+                        return "black"
+                    }
+                    else if (1==1) {
+                        return "#D3D3D3"
+                    }
+                })
+            popup
+                .style("opacity", 0)
 
 
 
+        })
 
     })
 

@@ -68,6 +68,21 @@
             padding: 10px;
             opacity: 0;
         }
+
+        .change-button {
+            margin-left: 30px;
+            margin-top: 5px;
+            background-color: orange;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+
+        }
     </style>
 </head>
 
@@ -77,6 +92,7 @@
             Sole Leader in Playoff Wins
         </h1>
         <p class="subhead">No other quarterback has even played in 35 postseason games, let alone won that many. Brady has 19 more wins than the quarterback with the second-most playoff victories.</p>
+        <button class="change-button">By <span class="type">Age</span></button>
         <svg width="1050px" height="500px"></svg>
         <p class="source">Source: The New York Times</p>
         <div class="pop-up"><div>
@@ -107,17 +123,6 @@
             .domain(d3.extent(data.map(function (d) { return d.year })))
             .range([margin.left, width - margin.right])
 
-        let y = d3.scaleLinear()
-            .domain(d3.extent(data.map(function (d) { return d.playoff_wins })))
-            .range([height - margin.bottom, margin.top])
-
-        let yAxisSettings = d3.axisRight(y)
-            .ticks(5) 
-            .tickSize(width-40)
-            .tickFormat(d3.format(".0f")) 
-            .tickPadding(15) 
-            
-
         let xAxisSettings = d3.axisBottom(x)
             .ticks(10)
             .tickSize(8)
@@ -128,6 +133,19 @@
             .attr("class", "x axis")
             .call(xAxisSettings)
             .attr("transform", `translate(0,${height - margin.bottom})`)
+
+
+
+        let y = d3.scaleLinear()
+            .domain(d3.extent(data.map(function (d) { return d.playoff_wins })))
+            .range([height - margin.bottom, margin.top])
+
+        let yAxisSettings = d3.axisRight(y)
+            .ticks(5) 
+            .tickSize(width-40)
+            .tickFormat(d3.format(".0f")) 
+            .tickPadding(15) 
+            
 
         let yAxisTicks = svg.append("g")
             .attr("class", "y axis")
@@ -145,33 +163,33 @@
         let player_ids = Array.from(grouped_data.keys())
 
         let line_path = svg.append("g")
-        .selectAll(".line")
-        .data(grouped_data)
-        .join("path")
-        .attr("class", function(d) {
-            return "line l-" +  d[0]
-        })
-        .attr("d", function(d) {
-            return line(d[1])
-        })
-        .style("fill", "none")
-        .style("stroke", d => {
-            if(d[1][d[1].length - 1].year >= 2019) {
-                return "#18D9ED"
-            } else if (['Starr', 'Bradshaw', 'Montana', 'Elway', 'Tarkenton'].includes(lookup[d[0]]['last_name'])) {
-                return "black"
-            }
-            else {
-                return "#D3D3D3"
-            }
-        })
-        .style("stroke-width", d => {
-            if(d[0] == "BradTo00") {
-                return "4px"
-            } else {
-                return "1px"
-            }
-        })
+            .selectAll(".line")
+            .data(grouped_data)
+            .join("path")
+            .attr("class", function(d) {
+                return "line l-" +  d[0]
+            })
+            .attr("d", function(d) {
+                return line(d[1])
+            })
+            .style("fill", "none")
+            .style("stroke", d => {
+                if(d[1][d[1].length - 1].year >= 2019) {
+                    return "#18D9ED"
+                } else if (['Starr', 'Bradshaw', 'Montana', 'Elway', 'Tarkenton'].includes(lookup[d[0]]['last_name'])) {
+                    return "black"
+                }
+                else {
+                    return "#D3D3D3"
+                }
+            })
+            .style("stroke-width", d => {
+                if(d[0] == "BradTo00") {
+                    return "4px"
+                } else {
+                    return "1px"
+                }
+            })
 
         var r = d3.scaleSqrt()
             .domain([0, d3.max(data, function (d) { return d.playoff_wins; })])
@@ -296,9 +314,75 @@
             popup
                 .style("opacity", 0)
 
-
-
         })
+
+        let button = d3.select('.change-button').on("click", update)
+
+        let var_state = 'Age'
+        let span_state = d3.select('.type')
+
+        function update () {
+
+            var t = d3.transition()
+                .duration(500)
+                .ease(d3.easeSin)
+            
+            console.log('button')
+            if (var_state == 'Age') {
+                var_state = 'Year'
+                span_state.html(var_state)
+
+                // x.domain(d3.extent(data.map(function (d) { return d.year - lookup[d.player_id].year_start + lookup[d.player_id].age_start })))
+                x.domain([21,44])
+                xAxisTicks.call(xAxisSettings)
+
+                line
+                    .defined(d => d.year - lookup[d.player_id].year_start + lookup[d.player_id].age_start <= 44)
+                    .x(function (d) { return x(d.year - lookup[d.player_id].year_start + lookup[d.player_id].age_start)}) 
+
+                svg.selectAll(".line")
+                    .transition(t)
+                    .attr("d", function(d) {
+                        return line(d[1])
+                    })
+
+                svg.selectAll(".circle")
+                    .transition(t)
+                    .attr("cx", d=> x(d[1][d[1].length - 1].year - d[1][0].year + lookup[d[0]].age_start))
+
+                labels
+                    .transition(t)
+                    .attr("x", d=> x(d[1][d[1].length - 1].year - d[1][0].year + lookup[d[0]].age_start) + 5)   // center x passing through your xScal
+            }
+            else {
+                var_state = 'Age'
+                span_state.html(var_state)
+        
+                x.domain(d3.extent(data.map(function (d) { return d.year })))
+                xAxisTicks.call(xAxisSettings)
+
+                line
+                    .x(function (d) { return x(d.year) }) 
+
+                svg.selectAll(".line")
+                    .transition(t)
+                    .attr("d", function(d) {
+                        return line(d[1])
+                    })
+
+                svg.selectAll(".circle")
+                    .transition(t)
+                    .attr("cx", d=> x(d[1][d[1].length - 1].year))
+                
+                labels
+                    .transition(t)
+                    .attr("x", d=> x(d[1][d[1].length - 1].year) + 5)
+            }
+
+            // line_path            
+            //     .transition(t) 
+            //     .attr("cy", function (d) { return y(d[sel_var_state]) })
+        }
 
     })
 

@@ -167,17 +167,13 @@
             d3.select('.n_children').html(pov_num)
             d3.select('.county-str').html(d.properties.Geo_QName)
 
-            let y_pos = +svg.select(".p-" + d.properties.GEOID)
-                .attr("cx") + 
-            +svg.select(".p-" + d.properties.GEOID)
+            let y_pos = svg.select(".p-" + d.properties.GEOID)
                 .attr("r")
 
             popup
                 .style("opacity", 1)
-                // .style("left", (event.x - 100) + "px")
-                // .style("top", String(y_pos) + "px")
                 .style("left", (event.x - 100) + "px")
-                .style("top", (event.y - 100) + "px")
+                .style("top", (event.y - 110 - Number(y_pos)) + "px")
 
         })
             

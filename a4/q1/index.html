@@ -3,28 +3,89 @@
 
 <head>
     <meta charset="utf-8">
-    <!-- set styles on the top -->
     <style>
         .chart-container {
             max-width: 1050px;
-            /* border: 2px solid red; */
             margin: 0 auto;
             /* auto centers the div */
-            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
         }
 
-        .headline {
-            font-family: 'Helvetica';
-            font-weight: 100;
+        .header h1 {
+            text-align: center;
+            font-family: Georgia; 
+            font-size: 50px;
+        }
+
+        .header h2 {
+            max-width: 60rem;
+            margin: auto auto;
+            padding: 1rem;
+            position: relative; 
+            font-weight: 100;       
+        }
+
+        #scrolly-overlay .scrolly {
+            font-size: 24px;
+            max-width: 60rem;
+            margin: 3rem auto;
+            margin: auto auto;
+            background-color: #f4f4f4;
+            padding: 1rem;
+            position: relative;
+
+        }
+
+        #scrolly-overlay .scrolly article {
+            padding: 0;
+            max-width: 30rem;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        #scrolly-overlay .scrolly article .step {
+            min-height: 67vh;
+            margin-bottom: 1rem;
+        }
+
+        #scrolly-overlay .scrolly article .step:last-of-type {
+            margin-bottom: 0;
+        }
+
+        #scrolly-overlay .scrolly article .step.is-active p {
+            background-color: #008080;
+        }
+
+        #scrolly-overlay .scrolly article .step p {
+            margin: 0;
+            padding: 1rem;
+            text-align: center;
+            background-color: #5b5b5ba4;
+            color: #f4f4f4;
+        }
+
+        #scrolly-overlay .scrolly figure.sticky {
+            /* this is the key style for the chart */
+            position: sticky;
+            width: 100%;
+            height: 50vh;
+            /* vh is the unit that divdes the viewport in units of 1/100 */
+            /* height is 50 vh = half the height of the viewport */
+            margin: 0;
+            top: 25vh;
+            /* this is how high it should be from top */
+
+            left: 0;
+        }
+
+        .spacer {
+            height: 1100px;
+
+        /* mine */
         }
 
         svg {
             /* border: 2px solid purple; */
             overflow: visible;
-        }
-
-        h1 {
-            margin: 0 auto;
         }
 
         .x .tick line {
@@ -67,14 +128,17 @@
         }
 
         .source {
-            max-width: 1000px;
-            margin: 0 auto;
             font-family: "Helvetica";
-            font-size: 15px
+            font-size: 15px;
+            text-align: center;
         }
 
         .year {
-            color: purple
+            color: purple; 
+            margin: 0 auto;
+            font-family: 'Helvetica';
+            text-align: center;
+            font-size: 50px;
         }
 
         .col-labels {
@@ -84,32 +148,63 @@
         }
 
         .subhead {
-            font-family: "Helvetica";
+            font-family: "Georgia";
         }
-        
+
     </style>
 </head>
 
 <body>
-    <div class="chart-container">
-        <h1 class="headline">
-            Healthcare by income in <span class="year">2020</span>
-        </h1>
-        <p class="subhead">Employer share in healthcare increases with income.</p>
+    <section class='header'>
+        <h1>Obamacare, in Its First Big Test as Safety Net, <br> Is Holding Up So Far</h1>
+        <h2>Job losses and the loss of insurance have typically gone hand in hand.<br>This year, more Americans are staying covered.</h2> 
 
-        <svg width="1050px" height="575px">
-        </svg>
+    </section>
+
+    <section id='scrolly-overlay'>
+
+        <div class='scrolly'>
+
+            <!--  sticky graphic   -->
+            <figure class='sticky'>
+                <div class="chart-container">
+                    <h1 class="year">
+                        2009
+                    </h1>            
+                    <!-- <svg width="1050px" height="575px"> -->
+                    <svg width="1050px" height="575px">
+                    </svg>
+            
+                </div>
+            </figure>
+
+            <!--  step text   -->
+            <article>
+                <div class='step' data-width='10%' data-index='2009'>
+                    <p class="subhead">Share of uninsured people was as high as 40% at the lower end of income percentile back in 2009. As people's income increase, they become much more likely to be covered through their employers.</p>
+                </div>
+                <div class='step' data-width='90%' data-index='2020'>
+                    <p class="subhead">The share of both Medicare and Medicaid increased substantially since 2009. As a result, share of uninsured people decreased.</p>
+                    <p class="subhead">It can be safely said that Obamacare managed to shrink uninsured people in the last decade.</p>
+                </div>
+            </article>
+        </div>
+
+    </section>
+
+    <section class='filler'>
         <p class="source">Source: Current Population Survey, analysis by Matt Bruenig</p>
-
-    </div>
 </body>
 
+<!-- add your script blocks at the end -->
 <script src="https://d3js.org/d3.v6.min.js"></script>
-<!-- we're using d3 version 6 (the latest version) for all out work -->
+<script src="https://unpkg.com/enter-view@1.0.0/enter-view.min.js"></script>
+<!-- https://github.com/russellgoldenberg/enter-view -->
+
 
 <script>
 
-    let width = 800;
+    let width = 1050;
     let height = 500;
 
     let svg = d3.select("body")
@@ -143,12 +238,6 @@
             "#90A4AE", // "Military",
             "#E0E0E0"  // "Other"
         ]
-
-    //     //https://github.com/d3/d3-shape#stacks
-
-    //     // https://github.com/d3/d3-scale#ordinal-scales
-
-    //     //https://github.com/d3/d3-shape#areas
 
     let year_state = 2009
     let d2020 = data.filter(d => d.year == 2020)
@@ -248,14 +337,14 @@
 
     let year = d3.select(".year")
 
-    function update () { 
+    function update (year_state) { 
 
         var t = d3.transition()
                 .duration(500)
                 .ease(d3.easeSin)
 
-        if (year_state == 2009) {
-            year_state = 2020
+        if (year_state == 2020) {
+            year_state = 2009
             year.html("2020")
 
             svg
@@ -280,7 +369,7 @@
             dance(stacked2020)
         }
         else {
-            year_state = 2009
+            year_state = 2020
             year.html("2009")
 
             svg
@@ -321,30 +410,31 @@
             .attr("d", area)
         
     }
-    var timer = d3.interval(update, 2000)
 
-    var size = 20
-    svg.selectAll("rect")
-        .data(sel_cols)
-        .enter()
-        .append("rect")
-        .attr("x", width + 15)
-        .attr("y", function(d,i){ return 10 + i*(size+5)}) // 100 is where the first dot appears. 25 is the distance between dots
-        .attr("width", size)
-        .attr("height", size)
-        .style("fill", function(d){ return color(d)})
 
-    svg.selectAll("col-labels")
-        .data(sel_cols)
-        .enter()
-        .append("text")
-        .attr("class", "col-labels")
-        .attr("x", width + 25 + size*1.2)
-        .attr("y", function(d,i){ return 24 + i*(size+5)})
-        .style("fill", "gray")
-        .text(function(d){ return d})
+    const container = d3.select('#scrolly-overlay');
+    const stepSel = container.selectAll('.step'); //final all the step nodes
+
+    function init() {
+
+        enterView({ //our main view function
+            selector: stepSel.nodes(), // we are only interested in the nodes
+            offset: 0.5, //when the slide is 50% away then trigger your chart
+            enter: el => { //what's supposed to happen when the slide enters?
+                const index = +d3.select(el).attr('data-index'); //extract the data-index attribute. this can be anything: a filter, a date, whatever.
+                update(index);
+            },
+            exit: el => { //what's supposed to happen when the slide exits?
+                let index = +d3.select(el).attr('data-index');
+                index = Math.max(0, index);
+                update(index);
+            }
+        });
+
+    }
+
+    init();
     
 
 })   
-
 </script>

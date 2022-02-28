@@ -1,30 +1,108 @@
 ---
-title: "babynames-vis"
+title: "Visualization of Babynames Dataset"
 author: "Egemen Pamukcu"
 date: "1/24/2022"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+# Install Packages
+```{r}
+library(babynames)
+library(ggplot2)
+library(tidyverse)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# Baby Names
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+babynames %>% 
+  filter(name == "Hilary") %>% 
+  pivot_wider(id_cols=c('year', 'name'), names_from='sex', values_from='n', values_fill=0) %>% 
+  mutate(decade=paste(substr(as.character(year), 1, 3), '0s', sep='')) %>% 
+  group_by(decade) %>% 
+  summarise(Male = sum(M), Female = sum(F)) %>% 
+  # mutate(`Male Ratio` = Male / (Male + Female)) %>% 
+  pivot_longer(cols=c(Male, Female), names_to='Sex') %>% 
+  ggplot(aes(fill=Sex, y=value, x=decade)) +
+  geom_bar(position="fill", stat="identity")
 ```
 
-## Including Plots
+```{r}
+changed_names = c('Beverly', 'Hilary', 'Lauren', 'Lesley', 'Lindsay', 'Meredith', 'Shelly')
 
-You can also embed plots, for example:
+name_change_plot <- babynames %>% 
+  filter(name %in% changed_names) %>% 
+  pivot_wider(id_cols=c('year', 'name'), names_from='sex', values_from='n', values_fill=0) %>% 
+  mutate(decade=paste(substr(as.character(year), 1, 3), '0s', sep='')) %>% 
+  group_by(decade, name) %>% 
+  summarise(Male = sum(M), Female = sum(F)) %>% 
+  # mutate(`Male Ratio` = Male / (Male + Female)) %>% 
+  pivot_longer(cols=c(Male, Female), names_to='Sex') %>% 
+  ggplot(aes(fill=Sex, y=value, x=decade)) +
+  geom_bar(position="fill", stat="identity") + 
+  facet_grid(name ~ .) + 
+  ylab('Share of babies registered') + 
+  theme(axis.title.x = element_blank(), panel.background=element_rect(fill = "white")) + 
+  labs(title = "Some girl's names that were once exclusively given to boys")
+ggsave('name_change.png', height = 10 , width = 8)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+# Europe Fossil vs. Renewable Energy
+
+```{r}
+library(readxl)
+
+energy <- read_excel('Data-file-Europe-Power-Sector-2020.xlsx')
+eu <- energy %>% 
+  filter(Variable %in% c('Coal', 'Gas', 'Other fossil', 'Hydro', 'Wind and solar', 'Bioenergy', 'Other renewables')) %>% 
+  filter(Area == 'EU27+1')
+
+eu %>% 
+  mutate(Source = factor(Variable, levels=c('Bioenergy', 'Hydro', 'Wind and solar', 'Other renewables', 
+                                              'Coal', 'Gas', 'Other fossil'))) %>% 
+  
+  ggplot(aes(x=Year, y=`Generation (TWh)`, fill=Source)) + 
+    geom_area(colour='white', alpha=.7, size=.3) + 
+  theme_classic()
+```
+
+```{r}
+library(viridis)
+library(hrbrthemes)
+
+fossil <- eu %>% 
+  filter(!Variable %in% c('Bioenergy', 'Hydro', 'Wind and solar', 'Other renewables'))
+
+renewables <- eu %>% 
+  filter(Variable %in% c('Bioenergy', 'Hydro', 'Wind and solar', 'Other renewables'))
+
+
+```
+
+# Mask use and political affiliation
+```{r}
+mask <- read_csv('mask-use-by-county.csv')
+election <- read_csv('2020_US_County_Level_Presidential_Results.csv')
+
+```
+```{r}
+joint <- mask %>% 
+  mutate(mask_score = 1 * RARELY + 2 * SOMETIMES + 3 * FREQUENTLY + 4 * ALWAYS) %>% 
+  inner_join(election, by=c("COUNTYFP"="county_fips"))
+```
+
+```{r}
+ggplot(joint, aes(x=per_gop, y=mask_score)) +
+  geom_point(alpha=.6, color='gray45') + 
+  geom_smooth(method='lm', color='maroon') + 
+  theme_minimal() + 
+  xlab('Vote % of the Republican Party\nin the 2020 elections') + 
+  ylab('Mask wearing frequency score') + 
+  labs(title = 'There is a clear negative correlation between support for Donald Trump\nand mask wearing frequency')
+
+ggsave('maskvsgop.png', height=10, width=10)
+```
+

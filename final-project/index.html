@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <!-- set styles on the top -->
+    <style>
+        .chart-container {
+            max-width: 1050px;
+            margin: 0 auto;
+            font-family: "Helvetica";
+        }
+
+        svg {
+            overflow: visible;
+        }
+
+        .headline {
+            font-family: "Georgia";
+            color: white;
+            margin-left: 30px;
+            margin-bottom: 0;
+            font-size: 50px;
+        }
+        .subhead {
+            font-family: "Georgia";
+            color: white;
+            margin-left: 30px;
+            line-height: 27px;
+        }
+        
+        .source {
+            max-width: 800px;
+            text-align: right;
+            font-size: 18px;
+            margin-top: 30px;
+            margin-left: 700px;
+            color: white;
+        }
+        
+        .x .tick line {
+            stroke: rgba(0, 0, 0, .2);
+        }
+
+        .y .tick line {
+            stroke: rgb(240, 239, 239);
+            stroke-width: 0.5px;
+            stroke-dasharray: 10px;
+
+        }
+
+        .x .domain {
+            display: none;
+        }
+
+        .y .domain {
+            display: none;
+        }
+
+        .y .tick text {
+            font-size: 14px;
+            fill: rgb(240, 239, 239);
+
+        }
+
+        .x .tick text {
+            font-size: 14px;
+            fill: white;
+        }
+
+        .pop-up {
+            position: absolute; 
+            background-color: rgba(143, 143, 143, 0.418);
+            font-size: 20px;
+            line-height: 1.2;
+            width: 300px;
+            text-align: center;
+            padding: 10px;
+            opacity: 0;
+            color: white
+        }
+
+
+
+        #opts {
+            margin-left: 30px;
+            margin-top: 5px;
+            background-color: grey;
+            border: none;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+
+        }
+
+        .labels {
+            text-align: center;
+            margin-bottom: -10px;
+        }
+    </style>
+</head>
+
+<body style="background-color:black;">
+    <div class="chart-container">
+        <h1 class="headline">
+            Asia's Record of State Fragility: Last 15 Years of State Legitimacy Across the Regional Members of the Asian Development Bank
+        </h1>
+        <p class="subhead">
+            Every year <a style="color:white" href="https://fragilestatesindex.org/">The Fund For Peace</a> releases its measurement of state legitimacy around the globe on a 0 to 10 scale. Across the last 15 years, many member countries of the Asian Development Bank (ADB) have demonstrated consistent improvements, although the regional differences remained notable. States in the Central and West Asian region performed poorly with little to no improvements in the last 15 years, whereas the aid recipient countries of the Oceania region managed to gradually improve their track record of state legitimacy. 
+        </p>
+
+        <select id = "opts">
+            <option value="South Asia">South Asia</option>
+            <option value="Central and West Asia">Central and West Asia</option> 
+            <option value="Oceania">Oceania</option> 
+            <option value="East Asia">East Asia</option> 
+        </select> 
+        <p class="labels"><span style="background-color: #18D9ED;">&nbspRecipients&nbsp</span>&nbsp&nbsp&nbsp&nbsp&nbsp<span style="background-color:orange">&nbspDonors&nbsp</span></p>
+        <svg class="across-years" width="1050px" height="550px"></svg>
+        <p class="source">Fund for Peace, Fragile States Index (FSI)</p>
+        <div class="pop-up"><div>
+    </div>
+</body>
+
+<script src="https://d3js.org/d3.v6.min.js"></script>
+
+<script>
+
+    let width = 1050;
+    let height = 550;
+
+    let svgYear = d3.select("body")
+        .select(".across-years")
+
+    d3.csv("state_legit.csv", d3.autoType).then(function (data) {
+
+        let margin = { top: 50, right: 10, bottom: 10, left: 30 };
+
+        svgYear.append("text")
+            .attr("class", "y label")
+            .attr("text-anchor", "start")
+            .attr("x", -height + 50)
+            .attr("y", 10)
+            .attr("transform", "rotate(-90)")
+            .attr("fill", "white")
+            .attr("font-size", "17px")
+            .text("← Lower Legitimacy");
+
+        svgYear.append("text")
+            .attr("class", "y label")
+            .attr("text-anchor", "end")
+            .attr("x", -50)
+            .attr("y", 10)
+            .attr("transform", "rotate(-90)")
+            .attr("font-size", "17px")
+            .attr("fill", "white")
+            .text("Higher Legitimacy →");
+
+        let x = d3.scaleLinear()
+            .domain(d3.extent(data.map(function (d) { return d.year })))
+            .range([margin.left, width - margin.right])
+
+        let xAxisSettings = d3.axisBottom(x)
+            .tickValues([2006, 2009, 2012, 2015, 2018, 2021])
+            .tickSize(8)
+            .tickPadding(10)
+            .tickFormat(d3.format(".0f"))
+
+        let xAxisTicks = svgYear.append("g")
+            .attr("class", "x axis")
+            .call(xAxisSettings)
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+
+        let y = d3.scaleLinear()
+            .domain(d3.extent(data.map(function (d) { return d.state_legit })))
+            .range([height - margin.bottom, margin.top])
+
+        let yAxisSettings = d3.axisRight(y)
+            .tickValues([2, 4, 6, 8, 10])
+            .tickSize(width-40)
+            .tickFormat(d3.format(".0f")) 
+            .tickPadding(15) 
+            
+
+        let yAxisTicks = svgYear.append("g")
+            .attr("class", "y axis")
+            .call(yAxisSettings)
+            .attr("transform", `translate(${margin.left},0)`)
+
+        let line = d3.line()
+            .x(function (d) { return x(d.year) }) 
+            .y(function (d) { return y(d.state_legit) })
+
+
+        let sa_data = data.filter(d => d.region == 'South Asia')
+        
+        let grouped_data = d3.group(sa_data, d => d.iso);
+
+        let line_path = svgYear.append("g")
+            .attr("class", "lines")
+            .selectAll(".line")
+            .data(grouped_data)
+            .join("path")
+            .attr("class", function(d) {
+                return "line l-" +  d[0]
+            })
+            .attr("d", function(d) {
+                return line(d[1])
+            })
+            .style("fill", "none")
+            .style("stroke", function(d) {
+                    if (d[1][0].donor==0) { return "#18D9ED"}
+                    else {return "orange"}})
+            .style("stroke-width", "3px")
+
+        let baseline = svgYear.append("line")
+            .attr("x1", margin.left)
+            .attr("x2", width - 10)
+            .attr("y1", y(0))
+            .attr("y2", y(0))
+            .style("stroke", "white")
+            .style("stroke-width", "1.5px")
+
+        let popup = d3.select(".pop-up");
+            
+        function mouseover(event, d) {
+            svgYear.select(".l-" + d[0])
+                .style("stroke", "#FF007F")
+                .style("stroke-width", "7px")
+                .raise()
+
+            let cname = d[1][0].country_name
+            let state_legit_2021 = d[1][d[1].length - 1].state_legit
+            let state_legit_2006 = d[1][0].state_legit
+            let delta = Math.round((state_legit_2021 - state_legit_2006) * 100) / 100
+            let change = "increased"
+            let delta_color = "#39FF14"
+            if (delta < 0) {
+                change = 'decreased'
+                delta_color = "red"
+            }
+            let country_color = "orange"
+            if (d[1][0].donor == 0) {
+                country_color = "#18D9ED"
+            }
+            let region = d[1][0].region
+            let min_year = d[1][0].year
+
+            let lang = `State Legitimacy in <span class="country">${cname}</span> ${change} by <span class="delta">${Math.abs(delta)}</span> between the years ${min_year} and 2021.`
+            
+            let scr_y = window.scrollY
+
+            popup
+                .style("opacity", 1)
+                .style("left", (event.x - 150) + "px")
+                .style("top", (event.y - 120 + scr_y) + "px")
+                .html(lang)
+                .select(".delta")
+                .style("color", delta_color)
+            popup
+                .select(".country")
+                .style("color", country_color)
+        }
+
+        function mouseout(event, d) {
+            let stroke_color = "orange"
+            if (d[1][0].donor==0) { stroke_color = "#18D9ED"}
+
+            svgYear.select(".l-" + d[0])
+                .style("stroke", stroke_color)
+                .style("stroke-width", "3px")
+
+            popup
+                .style("opacity", 0)
+                .style("left", 0 + "px")
+                .style("top", 0 + "px")
+        }
+
+        line_path.on("mouseout", mouseout)
+        line_path.on("mouseover", mouseover)
+
+
+        let dropdown = d3.select("#opts").on("change", update)
+        d3.selectAll(".line").style("opacity","0")
+        animatelines()
+        
+        function update() {
+
+            var t = d3.transition()
+                .duration(500)
+                .ease(d3.easeSin)
+
+            let filtered_data = data.filter(d => d.region == dropdown.node().value)
+            let filtered_grouped_data = d3.group(filtered_data, d => d.iso);
+            
+            svgYear.select(".lines").remove()
+            line_path = svgYear
+                .append("g")
+                .attr("class", "lines")
+                .selectAll(".line")
+                .data(filtered_grouped_data)
+                .join("path")
+                .attr("class", function(d) {
+                    return "line l-" +  d[0]
+                })
+                .attr("d", function(d) {
+                    return line(d[1])
+                })
+                .style("fill", "none")
+                .style("stroke", function(d) {
+                    if (d[1][0].donor==0) { return "#18D9ED"}
+                    else {return "orange"}})
+                .style("stroke-width", "3px")
+                .style("opacity", "0")
+            animatelines()
+
+            line_path.on("mouseout", mouseout)
+            line_path.on("mouseover", mouseover)
+
+        }
+
+        function animatelines() {
+            d3.selectAll(".line").style("opacity", "1")
+            d3.selectAll(".line").each(function(d, i){
+            
+                var totalLength = d3.select(".l-" + d[0]).node().getTotalLength()
+
+                d3.selectAll(".l-" + d[0]).attr("stroke-dasharray", totalLength + " " + totalLength)
+                    .attr("stroke-dashoffset", totalLength)
+                    .transition()
+                    .duration(2000)
+                    .delay(100*i)
+                    .attr("stroke-dashoffset", 0)
+                    .style("stroke-width",3)
+            })
+        }
+
+    })
+
+</script>

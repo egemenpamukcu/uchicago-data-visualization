@@ -100,6 +100,14 @@
             text-align: center;
             margin-bottom: -10px;
         }
+
+        #donor {
+            color: orange
+        }
+
+        #recipient{
+            color: #18D9ED
+        }
     </style>
 </head>
 
@@ -109,10 +117,12 @@
             Asia's Record of State Fragility: Last 15 Years of State Legitimacy Across the Regional Members of the Asian Development Bank
         </h1>
         <p class="subhead">
-            Every year <a style="color:white" href="https://fragilestatesindex.org/">The Fund For Peace</a> releases its measurement of state legitimacy around the globe on a 0 to 10 scale. Across the last 15 years, many member countries of the Asian Development Bank (ADB) have demonstrated consistent improvements, although the regional differences remained notable. States in the Central and West Asian region performed poorly with little to no improvements in the last 15 years, whereas the aid recipient countries of the Oceania region managed to gradually improve their track record of state legitimacy. 
+            Every year <a style="color:white" href="https://fragilestatesindex.org/">The Fund For Peace</a> releases its measurement of state legitimacy around the globe on a 0 to 10 scale. Across the last 15 years, many member countries of the Asian Development Bank (ADB) have demonstrated consistent improvements, although the regional differences remained notable. States in the Central and West Asian region performed poorly with little to no improvements in the last 15 years, whereas the aid recipient countries of the Oceania region managed to gradually improve their track record of state legitimacy. <br><br> 
+            Developing States like <span id="recipient">Bhutan</span> and <span id="recipient">Timor Leste</span> have managed to distinguish themselves among the other regional members in their capacity to improve state legitimacy over the last decade and a half, whereas some of the largest donor countries of ADB, <span id="donor">Australia</span> and <span id="donor">China</span>, have displayed a more stable trend for better or worse. 
         </p>
 
         <select id = "opts">
+            <option value="All Countries">All Regions</option>
             <option value="South Asia">South Asia</option>
             <option value="Central and West Asia">Central and West Asia</option> 
             <option value="Oceania">Oceania</option> 
@@ -159,6 +169,42 @@
             .attr("fill", "white")
             .text("Higher Legitimacy →");
 
+        svgYear.append("text")
+            .attr("class", "country CHN")
+            .attr("text-anchor", "end")
+            .attr("x", width - 10)
+            .attr("y", height - 100)
+            .attr("font-size", "17px")
+            .attr("fill", "white")
+            .text("China");
+
+        svgYear.append("text")
+            .attr("class", "country TLS")
+            .attr("text-anchor", "end")
+            .attr("x", width - 10)
+            .attr("y", height / 2 + 20)
+            .attr("font-size", "17px")
+            .attr("fill", "white")
+            .text("Timor Leste");
+
+        svgYear.append("text")
+            .attr("class", "country BTN")
+            .attr("text-anchor", "end")
+            .attr("x", width - 10)
+            .attr("y", height / 2 - 100)
+            .attr("font-size", "17px")
+            .attr("fill", "white")
+            .text("Bhutan");
+
+        svgYear.append("text")
+            .attr("class", "country AUS")
+            .attr("text-anchor", "end")
+            .attr("x", width - 10)
+            .attr("y", 30)
+            .attr("font-size", "17px")
+            .attr("fill", "white")
+            .text("Australia");
+
         let x = d3.scaleLinear()
             .domain(d3.extent(data.map(function (d) { return d.year })))
             .range([margin.left, width - margin.right])
@@ -194,10 +240,7 @@
             .x(function (d) { return x(d.year) }) 
             .y(function (d) { return y(d.state_legit) })
 
-
-        let sa_data = data.filter(d => d.region == 'South Asia')
-        
-        let grouped_data = d3.group(sa_data, d => d.iso);
+        let grouped_data = d3.group(data, d => d.iso);
 
         let line_path = svgYear.append("g")
             .attr("class", "lines")
@@ -211,10 +254,15 @@
                 return line(d[1])
             })
             .style("fill", "none")
+            .style("stroke-width", function(d) {
+                if (['AUS', 'BTN', 'CHN', 'TLS'].includes(d[1][0].iso)) { return "3px"}
+                else {return "1.5px"}})
             .style("stroke", function(d) {
-                    if (d[1][0].donor==0) { return "#18D9ED"}
-                    else {return "orange"}})
-            .style("stroke-width", "3px")
+                if (d[1][0].donor==0) { return "#18D9ED"}
+                else {return "orange"}})
+            .style("stroke-opacity", function(d) {
+                if (!['AUS', 'BTN', 'CHN', 'TLS'].includes(d[1][0].iso)) {return .22 }
+            })
 
         let baseline = svgYear.append("line")
             .attr("x1", margin.left)
@@ -230,6 +278,7 @@
             svgYear.select(".l-" + d[0])
                 .style("stroke", "#FF007F")
                 .style("stroke-width", "7px")
+                .style("stroke-opacity", 1)
                 .raise()
 
             let cname = d[1][0].country_name
@@ -266,12 +315,30 @@
         }
 
         function mouseout(event, d) {
-            let stroke_color = "orange"
-            if (d[1][0].donor==0) { stroke_color = "#18D9ED"}
 
-            svgYear.select(".l-" + d[0])
-                .style("stroke", stroke_color)
-                .style("stroke-width", "3px")
+            if (dropdown.node().value != 'All Countries') {
+                svgYear.select(".l-" + d[0])
+                    .style("stroke", function(c) {
+                        if (c[1][0].donor==0) {return "#18D9ED"}
+                        else {return "orange"}
+                    })
+                    .style("stroke-width", "3px")
+                    .style("stroke-opacity", 1)
+            } else {
+                svgYear.select(".l-" + d[0])
+                    .style("stroke", function(c) {
+                        if (c[1][0].donor==0) {return "#18D9ED"}
+                        else {return "orange"}
+                    })
+                    .style("stroke-width", function(c) {
+                        if (['AUS', 'BTN', 'CHN', 'TLS'].includes(c[0])) {return "3px"}
+                        else {return "1.5px"}
+                    })
+                    .style("stroke-opacity", function(c) {
+                        if (['AUS', 'BTN', 'CHN', 'TLS'].includes(c[0])) {return 1}
+                        else {return .22}
+                    })
+                }
 
             popup
                 .style("opacity", 0)
@@ -293,28 +360,66 @@
                 .duration(500)
                 .ease(d3.easeSin)
 
-            let filtered_data = data.filter(d => d.region == dropdown.node().value)
-            let filtered_grouped_data = d3.group(filtered_data, d => d.iso);
             
-            svgYear.select(".lines").remove()
-            line_path = svgYear
-                .append("g")
-                .attr("class", "lines")
-                .selectAll(".line")
-                .data(filtered_grouped_data)
-                .join("path")
-                .attr("class", function(d) {
-                    return "line l-" +  d[0]
-                })
-                .attr("d", function(d) {
-                    return line(d[1])
-                })
-                .style("fill", "none")
-                .style("stroke", function(d) {
-                    if (d[1][0].donor==0) { return "#18D9ED"}
-                    else {return "orange"}})
-                .style("stroke-width", "3px")
-                .style("opacity", "0")
+
+            if (dropdown.node().value != 'All Countries') {
+
+                svgYear.selectAll(".country").attr("opacity", 0)
+
+                let filtered_data = data.filter(d => d.region == dropdown.node().value)
+                let filtered_grouped_data = d3.group(filtered_data, d => d.iso);
+                
+                svgYear.select(".lines").remove()
+                line_path = svgYear
+                    .append("g")
+                    .attr("class", "lines")
+                    .selectAll(".line")
+                    .data(filtered_grouped_data)
+                    .join("path")
+                    .attr("class", function(d) {
+                        return "line l-" +  d[0]
+                    })
+                    .attr("d", function(d) {
+                        return line(d[1])
+                    })
+                    .style("fill", "none")
+                    .style("stroke", function(d) {
+                        if (d[1][0].donor==0) { return "#18D9ED"}
+                        else {return "orange"}})
+                    .style("stroke-width", "3px")
+                    .style("opacity", "0")
+                
+            }
+
+            else {
+                let grouped_data = d3.group(data, d => d.iso);
+                
+                svgYear.selectAll(".country").attr("opacity", 1)
+                
+                svgYear.select(".lines").remove()
+                line_path = svgYear.append("g")
+                    .attr("class", "lines")
+                    .selectAll(".line")
+                    .data(grouped_data)
+                    .join("path")
+                    .attr("class", function(d) {
+                        return "line l-" +  d[0]
+                    })
+                    .attr("d", function(d) {
+                        return line(d[1])
+                    })
+                    .style("fill", "none")
+                    .style("stroke-width", function(d) {
+                        if (['AUS', 'BTN', 'CHN', 'TLS'].includes(d[1][0].iso)) { return "3px"}
+                        else {return "1.5px"}})
+                    .style("stroke", function(d) {
+                        if (d[1][0].donor==0) { return "#18D9ED"}
+                        else {return "orange"}})
+                    .style("stroke-opacity", function(d) {
+                        if (!['AUS', 'BTN', 'CHN', 'TLS'].includes(d[1][0].iso)) {return .22 }
+                    })
+            }
+
             animatelines()
 
             line_path.on("mouseout", mouseout)
